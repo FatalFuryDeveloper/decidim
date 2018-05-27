@@ -39,6 +39,24 @@ en:
             base:
               too_many_minutes: The duration of the items exceed the meeting duration by %{count} minutes
               too_many_minutes_child: The duration of the item childs exceed the agenda item "%{agenda_parent}" parent duration by %{count} minutes
+    models:
+      decidim/meetings/close_meeting_event: Meeting closed
+      decidim/meetings/create_meeting_event: Meeting
+      decidim/meetings/meeting_registrations_enabled_event: Registrations enabled
+      decidim/meetings/meeting_registrations_over_percentage_event: Registrations over limit
+      decidim/meetings/upcoming_meeting_event: Upcoming meeting
+      decidim/meetings/update_meeting_event: Meeting updated
+  activerecord:
+    models:
+      decidim/meetings/meeting:
+        one: Meeting
+        other: Meetings
+      decidim/meetings/minutes:
+        one: Minutes
+        other: Minutes
+      decidim/meetings/registration:
+        one: Registration
+        other: Registrations
   decidim:
     admin:
       meeting_copies:
@@ -279,6 +297,7 @@ en:
             one: 1 slot remaining
             other: "%{count} slots remaining"
             zero: No slots remaining
+          view: View
       models:
         meeting:
           fields:
@@ -312,6 +331,8 @@ en:
         past_meetings: Past meetings
         see_all_meetings: See all meetings
         upcoming_meetings: Upcoming meetings
+      upcoming_meeting_for_card:
+        upcoming_meeting: Upcoming meeting
     resource_links:
       meetings_through_proposals:
         meeting_results: 'Related results:'

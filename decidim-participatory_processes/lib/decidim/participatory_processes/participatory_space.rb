@@ -2,7 +2,6 @@
 
 Decidim.register_participatory_space(:participatory_processes) do |participatory_space|
   participatory_space.icon = "decidim/participatory_processes/icon.svg"
-  participatory_space.card = "decidim/participatory_processes/process"
   participatory_space.model_class_name = "Decidim::ParticipatoryProcess"
 
   participatory_space.participatory_spaces do |organization|
@@ -12,6 +11,16 @@ Decidim.register_participatory_space(:participatory_processes) do |participatory
   participatory_space.query_type = "Decidim::ParticipatoryProcesses::ParticipatoryProcessType"
 
   participatory_space.permissions_class_name = "Decidim::ParticipatoryProcesses::Permissions"
+
+  participatory_space.register_resource(:participatory_process) do |resource|
+    resource.model_class_name = "Decidim::ParticipatoryProcess"
+    resource.card = "decidim/participatory_processes/process"
+  end
+
+  participatory_space.register_resource(:participatory_process_group) do |resource|
+    resource.model_class_name = "Decidim::ParticipatoryProcessGroup"
+    resource.card = "decidim/participatory_processes/process_group"
+  end
 
   participatory_space.context(:public) do |context|
     context.engine = Decidim::ParticipatoryProcesses::Engine
@@ -66,7 +75,7 @@ Decidim.register_participatory_space(:participatory_processes) do |participatory
         start_date: Time.current,
         end_date: 2.months.from_now.at_midnight,
         participatory_process_group: process_groups.sample,
-        scope: n.positive? ? nil : Decidim::Scope.reorder("RANDOM()").first
+        scope: n.positive? ? nil : Decidim::Scope.reorder(Arel.sql("RANDOM()")).first
       )
 
       Decidim::ParticipatoryProcessStep.find_or_initialize_by(
