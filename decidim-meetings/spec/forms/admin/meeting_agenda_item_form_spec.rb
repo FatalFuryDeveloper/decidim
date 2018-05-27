@@ -19,7 +19,7 @@ module Decidim::Meetings
     let(:parent_id) { nil }
     let(:deleted) { false }
 
-    let(:agenda_item_childs) do
+    let(:agenda_item_children) do
       [
         {
           title: Decidim::Faker::Localized.sentence(2),
@@ -44,7 +44,7 @@ module Decidim::Meetings
         parent_id: parent_id,
         deleted: deleted,
         position: position,
-        agenda_item_childs: agenda_item_childs
+        agenda_item_children: agenda_item_children
       }
     end
 

@@ -12,8 +12,8 @@ module Decidim
         attribute :visible, Boolean
 
         validates :title, translatable_presence: true
-        validate :total_agenda_duration_lower_than_meeting_duration
-        validate :agenda_item_childs_duration_lower_than_or_equal_than_parent
+        validate :agenda_duration_lt_meeting_duration
+        validate :agenda_item_duration_lt_than_parent
 
         def map_model(model)
           self.agenda_items = model.agenda_items.first_class.map do |agenda_item|
@@ -27,30 +27,25 @@ module Decidim
           @meeting ||= context[:meeting]
         end
 
-        def total_agenda_duration_lower_than_meeting_duration
-          difference = agenda_duration - meeting.meeting_duration
-          errors.add(:base, :too_many_minutes, count: difference) if agenda_duration > meeting.meeting_duration
+        def agenda_duration_lt_meeting_duration
+          if agenda_duration > meeting.meeting_duration
+            difference = agenda_duration - meeting.meeting_duration
+            errors.add(:base, :too_many_minutes, count: difference)
+          end
         end
 
         def agenda_duration
-          duration = 0
-          duration_childs = 0
-
-          duration += agenda_items.sum(&:duration)
-          agenda_items.each do |agenda_item|
-            duration_childs += agenda_item.agenda_item_childs.sum(&:duration)
-          end
-
-          duration + duration_childs
+          agenda_items.sum(&:duration)
         end
 
-        def agenda_item_childs_duration_lower_than_or_equal_than_parent
-          duration_childs = 0
-
+        def agenda_item_duration_lt_than_parent
           agenda_items.each do |agenda_item|
-            duration_childs += agenda_item.agenda_item_childs.sum(&:duration)
-            difference = duration_childs - agenda_item.duration
-            errors.add(:base, :too_many_minutes_child, agenda_parent: translated_attribute(agenda_item.title), count: difference) if duration_childs > agenda_item.duration
+            children_duration = agenda_item.agenda_item_children.sum(&:duration)
+
+            if children_duration > agenda_item.duration
+              difference = children_duration - agenda_item.duration
+              errors.add(:base, :too_many_minutes_child, parent_title: translated_attribute(agenda_item.title), count: difference)
+            end
           end
         end
       end

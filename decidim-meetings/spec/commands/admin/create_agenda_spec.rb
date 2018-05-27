@@ -4,58 +4,48 @@ require "spec_helper"
 
 module Decidim::Meetings
   describe Admin::CreateAgenda do
-    subject { described_class.new(form) }
+    subject { described_class.new(form, meeting) }
 
     let(:organization) { create :organization, available_locales: [:en] }
-    let(:current_user) { create :user, :admin, :confirmed, organization: organization }
-    let(:participatory_process) { create :participatory_process, organization: organization }
-    let(:current_component) { create :component, participatory_space: participatory_process, manifest_name: "meetings" }
-    let(:scope) { create :scope, organization: organization }
-    let(:category) { create :category, participatory_space: participatory_process }
-    let(:address) { "address" }
+    let(:component) { create(:component, manifest_name: "meetings", organization: organization) }
+    let(:meeting) { create(:meeting, component: component) }
+    let(:current_user) { create(:user, :admin, :confirmed, organization: organization) }
+
     let(:invalid) { false }
-    let(:latitude) { 40.1234 }
-    let(:longitude) { 2.1234 }
-    let(:start_time) { 1.day.from_now }
-    let(:organizer) { create :user, organization: organization }
-    let(:private_meeting) { false }
-    let(:transparent) { true }
-    let(:transparent_type) { "transparent" }
-    let(:services) do
-      [
-        {
-          "title" => { "en" => "First service" },
-          "description" => { "en" => "First description" }
-        },
-        {
-          "title" => { "en" => "Second service" },
-          "description" => { "en" => "Second description" }
-        }
-      ]
-    end
-    let(:services_to_persist) do
-      services.map { |service| Admin::MeetingServiceForm.from_params(service) }
-    end
     let(:form) do
       double(
         invalid?: invalid,
         title: { en: "title" },
-        description: { en: "description" },
-        location: { en: "location" },
-        location_hints: { en: "location_hints" },
-        start_time: start_time,
-        end_time: 1.day.from_now + 1.hour,
-        address: address,
-        latitude: latitude,
-        longitude: longitude,
-        scope: scope,
-        category: category,
-        organizer: organizer,
-        private_meeting: private_meeting,
-        transparent: transparent,
-        services_to_persist: services_to_persist,
-        current_user: current_user,
-        current_component: current_component
+        visible: true,
+        agenda_items: [
+          double(
+            title: { en: "title" },
+            description: { en: "description" },
+            position: 1,
+            duration: 2.hours,
+            parent_id: nil,
+            deleted?: false,
+            agenda_item_children: [
+              double(
+                title: { en: "title child 1" },
+                description: { en: "description child 1" },
+                position: 1,
+                duration: 1.hour,
+                parent_id: nil,
+                deleted?: false
+              ),
+              double(
+                title: { en: "title child 2" },
+                description: { en: "description child 2" },
+                position: 2,
+                duration: 1.hour,
+                parent_id: nil,
+                deleted?: false
+              )
+            ]
+          )
+        ],
+        current_user: current_user
       )
     end
 
@@ -68,86 +58,30 @@ module Decidim::Meetings
     end
 
     context "when everything is ok" do
-      let(:meeting) { Meeting.last }
+      let(:agenda) { Agenda.last }
+      let(:agenda_item) { agenda.agenda_items.first }
 
-      it "creates the meeting" do
-        expect { subject.call }.to change(Meeting, :count).by(1)
+      it "creates the meeting agenda and agenda items" do
+        expect { subject.call }.to change(Agenda, :count).by(1)
+        expect { subject.call }.to change(AgendaItem, :count).by(3)
       end
 
-      it "sets the scope" do
+      it "correctly sets the children items" do
         subject.call
-        expect(meeting.scope).to eq scope
-      end
-
-      it "sets the category" do
-        subject.call
-        expect(meeting.category).to eq category
-      end
-
-      it "sets the organizer" do
-        subject.call
-        expect(meeting.organizer).to eq organizer
-      end
-
-      it "sets the component" do
-        subject.call
-        expect(meeting.component).to eq current_component
-      end
-
-      it "sets the longitude and latitude" do
-        subject.call
-        last_meeting = Meeting.last
-        expect(last_meeting.latitude).to eq(latitude)
-        expect(last_meeting.longitude).to eq(longitude)
-      end
-
-      it "sets the services" do
-        subject.call
-        expect(meeting.services).to eq(services)
+        expect(translated(agenda_item.title)).to eq("title")
+        expect(agenda_item.agenda_item_children.size).to eq(2)
+        expect(agenda_item.agenda_item_children.order(:position).map(&:title)). to eq([{ "en" => "title child 1" }, { "en" => "title child 2" }])
       end
 
       it "traces the action", versioning: true do
         expect(Decidim.traceability)
           .to receive(:create!)
-          .with(Meeting, current_user, kind_of(Hash))
+          .with(Agenda, current_user, kind_of(Hash))
           .and_call_original
 
         expect { subject.call }.to change(Decidim::ActionLog, :count)
         action_log = Decidim::ActionLog.last
         expect(action_log.version).to be_present
-      end
-
-      it "schedules a upcoming meeting notification job 48h before start time" do
-        expect(Decidim.traceability)
-          .to receive(:create!)
-          .and_return(instance_double(Meeting, id: 1, start_time: start_time, participatory_space: participatory_process))
-
-        expect(UpcomingMeetingNotificationJob)
-          .to receive(:generate_checksum).and_return "1234"
-
-        expect(UpcomingMeetingNotificationJob)
-          .to receive_message_chain(:set, :perform_later) # rubocop:disable RSpec/MessageChain
-          .with(set: start_time - 2.days).with(1, "1234")
-
-        allow(Decidim::EventsManager).to receive(:publish).and_return(true)
-
-        subject.call
-      end
-
-      it "sends a notification to the participatory space followers" do
-        follower = create(:user, organization: organization)
-        create(:follow, followable: participatory_process, user: follower)
-
-        expect(Decidim::EventsManager)
-          .to receive(:publish)
-          .with(
-            event: "decidim.events.meetings.meeting_created",
-            event_class: Decidim::Meetings::CreateMeetingEvent,
-            resource: kind_of(Meeting),
-            recipient_ids: [follower.id]
-          )
-
-        subject.call
       end
     end
   end

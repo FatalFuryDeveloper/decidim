@@ -45,7 +45,7 @@ module Decidim
           }
 
           update_nested_model(form_agenda_item, agenda_item_attributes, @agenda.agenda_items) do |agenda_item|
-            form_agenda_item.agenda_item_childs.each do |form_agenda_item_child|
+            form_agenda_item.agenda_item_children.each do |form_agenda_item_child|
               agenda_item_child_attributes = {
                 title: form_agenda_item_child.title,
                 description: form_agenda_item_child.description,
@@ -55,13 +55,13 @@ module Decidim
                 agenda: @agenda
               }
 
-              update_nested_model(form_agenda_item_child, agenda_item_child_attributes, agenda_item.agenda_item_childs)
+              update_nested_model(form_agenda_item_child, agenda_item_child_attributes, agenda_item.agenda_item_children)
             end
           end
         end
 
-        def update_nested_model(form, attributes, agenda_item_childs)
-          record = agenda_item_childs.find_by(id: form.id) || agenda_item_childs.build(attributes)
+        def update_nested_model(form, attributes, agenda_item_children)
+          record = agenda_item_children.find_by(id: form.id) || agenda_item_children.build(attributes)
 
           yield record if block_given?
 
@@ -78,7 +78,7 @@ module Decidim
 
         def update_agenda!
           Decidim.traceability.update!(
-            agenda,
+            @agenda,
             form.current_user,
             title: form.title,
             visible: form.visible

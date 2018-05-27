@@ -28,13 +28,13 @@ module Decidim::Meetings
         {
           title: Decidim::Faker::Localized.sentence(2),
           description: Decidim::Faker::Localized.sentence(5),
-          duration: 12,
+          duration: 1.hour,
           position: 0
         },
         {
           title: Decidim::Faker::Localized.sentence(2),
           description: Decidim::Faker::Localized.sentence(5),
-          duration: 24,
+          duration: 1.hour,
           position: 1
         }
       ]
@@ -46,6 +46,10 @@ module Decidim::Meetings
         visible: visible,
         agenda_items: agenda_items
       }
+    end
+
+    before do
+      allow(meeting).to receive(:meeting_duration).and_return(6.hours)
     end
 
     context "when everything is OK" do
@@ -64,9 +68,47 @@ module Decidim::Meetings
           {
             title: nil,
             description: Decidim::Faker::Localized.sentence(5),
-            duration: 12,
+            duration: 1.hour,
             position: 0
-          },
+          }
+        ]
+      end
+
+      it { is_expected.not_to be_valid }
+    end
+
+    describe "when agenda duration is greater than meeting duration" do
+      let(:agenda_items) do
+        [
+          {
+            title: Decidim::Faker::Localized.sentence(2),
+            description: Decidim::Faker::Localized.sentence(5),
+            duration: meeting.meeting_duration + 1.hour,
+            position: 0
+          }
+        ]
+      end
+
+      it { is_expected.not_to be_valid }
+    end
+
+    describe "when agenda items duration is greater than their parent" do
+      let(:agenda_items) do
+        [
+          {
+            title: Decidim::Faker::Localized.sentence(2),
+            description: Decidim::Faker::Localized.sentence(5),
+            duration: 45.minutes,
+            position: 0,
+            agenda_item_children: [
+              {
+                title: Decidim::Faker::Localized.sentence(2),
+                description: Decidim::Faker::Localized.sentence(5),
+                duration: 50.minutes,
+                position: 0
+              }
+            ]
+          }
         ]
       end
 

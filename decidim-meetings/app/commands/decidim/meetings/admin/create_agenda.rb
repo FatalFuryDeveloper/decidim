@@ -47,7 +47,7 @@ module Decidim
           }
 
           create_nested_model(form_agenda_item, agenda_item_attributes, @form.agenda_items) do |agenda_item|
-            form_agenda_item.agenda_item_childs.each do |form_agenda_item_child|
+            form_agenda_item.agenda_item_children.each do |form_agenda_item_child|
               agenda_item_child_attributes = {
                 title: form_agenda_item_child.title,
                 description: form_agenda_item_child.description,
@@ -57,12 +57,12 @@ module Decidim
                 agenda: @agenda
               }
 
-              create_nested_model(form_agenda_item_child, agenda_item_child_attributes, agenda_item.agenda_item_childs)
+              create_nested_model(form_agenda_item_child, agenda_item_child_attributes, agenda_item.agenda_item_children)
             end
           end
         end
 
-        def create_nested_model(form, attributes, _agenda_item_childs)
+        def create_nested_model(form, attributes, _agenda_item_children)
           record = Decidim::Meetings::AgendaItem.find_or_create_by!(attributes)
 
           yield record if block_given?

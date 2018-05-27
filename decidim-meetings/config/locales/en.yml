@@ -38,7 +38,7 @@ en:
           attributes:
             base:
               too_many_minutes: The duration of the items exceed the meeting duration by %{count} minutes
-              too_many_minutes_child: The duration of the item childs exceed the agenda item "%{agenda_parent}" parent duration by %{count} minutes
+              too_many_minutes_child: The duration of the item childs exceed the agenda item "%{parent_title}" parent duration by %{count} minutes
     models:
       decidim/meetings/close_meeting_event: Meeting closed
       decidim/meetings/create_meeting_event: Meeting
@@ -131,7 +131,7 @@ en:
           agenda_item:
             add_agenda_item_child: Add agenda item child
             agenda_item: Agenda Item
-            agenda_item_childs: Agenda Item Childs
+            agenda_item_children: Agenda Item Childs
             down: Down
             remove: Remove
             up: Up

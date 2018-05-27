@@ -14,7 +14,7 @@ module Decidim
         attribute :parent_id, Integer
         attribute :position, Integer
         attribute :deleted, Boolean, default: false
-        attribute :agenda_item_childs, Array[MeetingAgendaItemsForm]
+        attribute :agenda_item_children, Array[MeetingAgendaItemsForm]
 
         validates :title, translatable_presence: true, unless: :deleted
         validates :position, numericality: { greater_than_or_equal_to: 0 }, unless: :deleted
